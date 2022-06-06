@@ -12,15 +12,67 @@ public class Main {
     public static void main(String[] args) {
         System.out.println(greetingTime());
         System.out.println();
-        System.out.println("Enter an animal:");
-        String animal = SC.nextLine();
-        System.out.println(request(animal));
-        String response = SC.nextLine();
-        if (defineAnswer(response))
-            System.out.println("You answered: Yes\n");
-        else
-            System.out.println("You answered: No\n");
+        System.out.println("Enter the first animal:");
+        String firstAnimal = SC.nextLine();
+        System.out.println("Enter the second animal:");
+        String secondAnimal = SC.nextLine();
+        String response = null;
+        do {
+            if (response != null)
+                System.out.println("""
+                        The examples of a statement:
+                         - It can fly
+                         - It has horn
+                         - It is a mammal""");
+            System.out.printf("Specify a fact that distinguishes %s from %s.%n",
+                    firstAnimal = withArticle(firstAnimal), secondAnimal = withArticle(secondAnimal));
+            System.out.println("The sentence should be of the format: 'It can/has/is ...'.\n");
+
+            response = SC.nextLine();
+        } while (!response.matches("(?is)it (can|has|is) .*"));
+        fact(firstAnimal, secondAnimal, response);
         rngGoodbye();
+    }
+
+    private static void fact(String firstAnimal, String secondAnimal, String response) {
+        String definiteFirst = firstAnimal.replaceFirst("a |an ", "The ");
+        String definiteSecond = secondAnimal.replaceFirst("a |an ", "The ");
+        String responseVerb = response.replaceFirst("(?i)it (.*?) (.*)[.!?]?\\s?", "$1").toLowerCase();
+        String oppositeVerb = getOpposite(responseVerb);
+        String statement = response.replaceFirst("(?i)it (.*?) ([^.!?]*)[.!?]?\\s?", "$2").toLowerCase();
+
+        System.out.printf("Is it correct for %s?%n", secondAnimal);
+
+        if (defineAnswer(SC.nextLine())) {
+            System.out.println("I have learned the following facts about animals:");
+            System.out.printf("- %s %s %s.%n", definiteFirst, oppositeVerb, statement);
+            System.out.printf("- %s %s %s.%n", definiteSecond, responseVerb, statement);
+        } else {
+            System.out.println("I have learned the following facts about animals:");
+            System.out.printf("- %s %s %s.%n", definiteFirst, responseVerb, statement);
+            System.out.printf("- %s %s %s.%n", definiteSecond, oppositeVerb, statement);
+        }
+
+        System.out.println("I can distinguish these animals by asking the question:");
+        if (responseVerb.equals("has")) {
+            System.out.printf("- Does it have %s?%n%n", statement);
+        } else {
+            System.out.printf("- %s it %s?%n%n", capitalize(responseVerb), statement);
+        }
+    }
+
+    private static String capitalize(String str) {
+        char c = str.charAt(0);
+        return Character.toUpperCase(c) + str.substring(1);
+    }
+
+    private static String getOpposite(String responseVerb) {
+        return switch (responseVerb) {
+            case "can" -> "can't";
+            case "has" -> "doesn't have";
+            case "is" -> "isn't";
+            default -> throw new IllegalStateException();
+        };
     }
 
     private static void rngGoodbye() {
@@ -61,17 +113,20 @@ public class Main {
         }
     }
 
-    private static String request(String animal) {
-        StringBuilder sb = new StringBuilder("Is it ");
-        String processed = animal.toLowerCase().replaceAll("((a|an|the) )?(.*)", "$3");
-        if (processed.equals("xeme") || processed.matches("^[aeiou].*")) {
-            if (processed.equals("unicorn"))
-                sb.append("a ");
+    private static String withArticle(String animal) {
+        StringBuilder sb = new StringBuilder();
+        String trimmedInput = animal.trim().toLowerCase();
+        if ((trimmedInput.startsWith("a") || trimmedInput.startsWith("an"))
+        && trimmedInput.matches("(a|an) (.*)")) {
+            sb.append(trimmedInput);
+        } else {
+            String processed = trimmedInput
+                    .replaceAll("(the )?(.*)", "$2");
+            if (processed.matches("^[aeiou].*"))
+                sb.append("an ").append(processed);
             else
-                sb.append("an ");
-        } else
-            sb.append("a ");
-        sb.append(processed).append('?');
+                sb.append("a ").append(processed);
+        }
         return sb.toString();
     }
 
