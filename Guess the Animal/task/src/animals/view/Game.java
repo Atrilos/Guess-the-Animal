@@ -3,7 +3,13 @@ package animals.view;
 import animals.binaryTree.KnowledgeTree;
 import animals.entity.Animal;
 import animals.entity.Response;
+import animals.persistence.Persistence;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 
+import java.io.IOException;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.Random;
@@ -13,7 +19,9 @@ public class Game {
 
     private final static Scanner SC = new Scanner(System.in);
     private final static Random RNG = new Random();
-    private static KnowledgeTree TREE;
+    private static KnowledgeTree tree;
+    private static String fileName;
+    private static ObjectMapper objectMapper = new JsonMapper();
 
     public boolean start() {
         Animal firstAnimal = null;
@@ -29,7 +37,7 @@ public class Game {
         if (!SC.nextLine().equals(""))
             throw new RuntimeException();
 
-        next = TREE.getRootValue();
+        next = tree.getRootValue();
 
         while (true) {
             if (next == null) {
@@ -56,13 +64,13 @@ public class Game {
                         System.out.println("Nice!");
                         break;
                     } else {
-                        next = TREE.getNextValue(false);
+                        next = tree.getNextValue(false);
                     }
                 } else {
                     System.out.println(next);
                     answer = defineAnswer(SC.nextLine());
                     isRight = answer;
-                    next = TREE.getNextValue(answer);
+                    next = tree.getNextValue(answer);
                 }
             }
         }
@@ -85,11 +93,33 @@ public class Game {
         System.out.println(sb);
     }
 
-    public void firstLaunch() {
-        System.out.println("I want to learn about animals.");
-        System.out.println("Which animal do you like most?");
-        TREE = new KnowledgeTree(new Animal(SC.nextLine()));
-        System.out.println("Wonderful! I've learned so much about animals!");
+    public void firstLaunch(String[] args) {
+        fileName = "animals.";
+        if (args.length == 2 && args[0].equals("-type")) {
+            if (args[1].equals("xml")) {
+                fileName += "xml";
+                objectMapper = new XmlMapper();
+            } else if (args[1].equals("yaml")) {
+                fileName += "yaml";
+                objectMapper = new YAMLMapper();
+            } else {
+                fileName += "json";
+            }
+        } else {
+            fileName += "json";
+        }
+
+        KnowledgeTree tree = load();
+
+        if (tree == null) {
+            System.out.println("I want to learn about animals.");
+            System.out.println("Which animal do you like most?");
+            Game.tree = new KnowledgeTree(new Animal(SC.nextLine()));
+            System.out.println("Wonderful! I've learned so much about animals!");
+        } else {
+            System.out.println("I know a lot about animals.");
+            Game.tree = tree;
+        }
     }
 
     private boolean defineAnswer(String response) {
@@ -134,7 +164,7 @@ public class Game {
         Response responseObject = new Response(response);
         boolean answer;
 
-        System.out.printf("Is it correct for %s?%n", secondAnimal);
+        System.out.printf("Is the statement correct for %s?%n", secondAnimal);
         answer = defineAnswer(SC.nextLine());
 
         System.out.println("I have learned the following facts about animals:");
@@ -176,6 +206,21 @@ public class Game {
             question = String.format("%s it %s?", responseObject.capitalize().getVerb(), responseObject.getStatement());
             System.out.printf("- %s%n%n", question);
         }
-        TREE.add(question, secondAnimal, !answer, isRight);
+        tree.add(question, secondAnimal, !answer, isRight);
+    }
+
+    public void persist() {
+        try {
+            Persistence.save(tree, fileName, objectMapper);
+        } catch (IOException ignored) {
+        }
+    }
+
+    public KnowledgeTree load() {
+        try {
+            return Persistence.load(fileName, objectMapper);
+        } catch (IOException e) {
+            return null;
+        }
     }
 }

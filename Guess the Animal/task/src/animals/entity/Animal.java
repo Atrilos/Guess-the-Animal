@@ -18,6 +18,21 @@ public class Animal {
         this.article = article;
     }
 
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
+    public void setArticle(String article) {
+        this.article = article;
+    }
+
+    public Animal() {
+    }
+
     private void init(String input) {
         String trimmedInput = input.trim().toLowerCase();
         if ((trimmedInput.startsWith("a") || trimmedInput.startsWith("an"))

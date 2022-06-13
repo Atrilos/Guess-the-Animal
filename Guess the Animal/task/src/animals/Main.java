@@ -8,10 +8,11 @@ public class Main {
         Game game = new Game();
 
         game.greetings();
-        game.firstLaunch();
+        game.firstLaunch(args);
         while (true) {
             if (!game.start()) break;
         }
+        game.persist();
         game.rngGoodbye();
     }
 }
